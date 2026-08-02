@@ -1,30 +1,32 @@
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <iostream>
-#include <cstdlib>
-#include <string>
+#include <stdio.h>
+#include <stdlib.h>
 
 // ============================================================================
-// HELPER FUNCTIONS
+// BARE-METAL HELPER FUNCTIONS
 // ============================================================================
-void LogStep(const std::string& title) {
-    std::cout << "\n[+] " << title << "..." << std::endl;
+
+static void LogStep(const char* title) {
+    printf("\n[+] %s...\n", title);
 }
 
-void SetRegistryDWORD(HKEY hKeyRoot, const char* subKey, const char* valueName, DWORD value) {
+static void SetRegistryDWORD(HKEY hKeyRoot, const char* subKey, const char* valueName, DWORD value) {
     HKEY hKey;
     if (RegOpenKeyExA(hKeyRoot, subKey, 0, KEY_SET_VALUE, &hKey) == ERROR_SUCCESS) {
-        RegSetValueExA(hKey, valueName, 0, REG_DWORD, (BYTE*)&value, sizeof(value));
+        RegSetValueExA(hKey, valueName, 0, REG_DWORD, (const BYTE*)&value, sizeof(value));
         RegCloseKey(hKey);
-        std::cout << "  [SUCCESS] " << valueName << " -> " << value << std::endl;
+        printf("  [SUCCESS] %s -> %lu\n", valueName, value);
     } else {
-        std::cout << "  [FAIL] Could not access: " << subKey << std::endl;
+        printf("  [FAIL] Could not access: %s\n", subKey);
     }
 }
 
 // ============================================================================
 // 1. GPU OPTIMIZATION MODULE (NVIDIA / HAGS)
 // ============================================================================
-void PatchGPU() {
+
+void PatchGPU(void) {
     LogStep("Applying Brutal GPU Performance Tweaks");
 
     // Enable Hardware-Accelerated GPU Scheduling (HAGS) & Adjust TDR Delay
@@ -44,22 +46,23 @@ void PatchGPU() {
 // ============================================================================
 // 2. CPU OPTIMIZATION MODULE (Disable Core Parking & Lock Max Clocks)
 // ============================================================================
-void PatchCPU() {
+
+void PatchCPU(void) {
     LogStep("Unparking CPU Cores & Locking Max Frequency");
 
     // Unhide Power Options
-    std::system("powercfg -attributes SUB_PROCESSOR CPMINCORES -ATTRIB_HIDE >nul 2>&1");
-    std::system("powercfg -attributes SUB_PROCESSOR CPMAXCORES -ATTRIB_HIDE >nul 2>&1");
+    system("powercfg -attributes SUB_PROCESSOR CPMINCORES -ATTRIB_HIDE >nul 2>&1");
+    system("powercfg -attributes SUB_PROCESSOR CPMAXCORES -ATTRIB_HIDE >nul 2>&1");
 
     // Enable Ultimate Performance Scheme
-    std::system("powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 >nul 2>&1");
+    system("powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 >nul 2>&1");
 
     // Force 100% Min/Max CPU Frequency & Unpark 100% of Cores
-    std::system("powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100");
-    std::system("powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100");
-    std::system("powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100");
-    std::system("powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100");
-    std::system("powercfg /setactive SCHEME_CURRENT");
+    system("powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100");
+    system("powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100");
+    system("powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100");
+    system("powercfg -setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100");
+    system("powercfg /setactive SCHEME_CURRENT");
 
     // Quantum Scheduling: Prioritize Foreground Windows
     const char* priorityPath = "SYSTEM\\CurrentControlSet\\Control\\PriorityControl";
@@ -69,24 +72,26 @@ void PatchCPU() {
 // ============================================================================
 // 3. SYSTEM REPAIR MODULE
 // ============================================================================
-void PatchSystem() {
+
+void PatchSystem(void) {
     LogStep("Running System Integrity & DNS Cleanup");
-    std::system("sfc /scannow");
-    std::system("ipconfig /flushdns >nul 2>&1");
+    system("sfc /scannow");
+    system("ipconfig /flushdns >nul 2>&1");
 }
 
 // ============================================================================
-// MAIN ENTRY POINT
+// MAIN ENTRY POINT (PURE C)
 // ============================================================================
-int main() {
-    std::cout << "==================================================" << std::endl;
-    std::cout << "         LETHAL PATCHER ENGINE (DIRECT)          " << std::endl;
-    std::cout << "==================================================" << std::endl;
+
+int main(void) {
+    printf("==================================================\n");
+    printf("         LETHAL PATCHER ENGINE (RAW C EDITION)    \n");
+    printf("==================================================\n");
 
     PatchSystem();
     PatchGPU();
     PatchCPU();
 
-    std::cout << "\n[+] ALL PATCHES APPLIED SUCCESSFULLY. REBOOT REQUIRED." << std::endl;
+    printf("\n[+] ALL PATCHES APPLIED SUCCESSFULLY. REBOOT REQUIRED.\n");
     return 0;
 }
